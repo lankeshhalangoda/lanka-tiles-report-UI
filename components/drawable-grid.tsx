@@ -2,19 +2,45 @@
 
 import type React from "react"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Eraser, Pencil } from "lucide-react"
-import { tileOptions } from "./customer-form"
+import { getTileImagePath } from "./customer-form"
 import Image from "next/image"
+import { readFloorDragPayload } from "@/components/floor-plan/furniture-palette"
+import type { GridMetrics } from "@/components/floor-plan/types"
+import { cn } from "@/lib/utils"
+
+export type TileLayoutMode = "draw" | "furnish"
 
 interface DrawableGridProps {
-  canvasRef: React.RefObject<HTMLCanvasElement>
+  canvasRef: React.RefObject<HTMLCanvasElement | null>
   dimensions: { width: number; height: number }
   selectedTileColor?: string
+  layoutMode?: TileLayoutMode
+  paletteDragging?: boolean
+  onFurnitureDrop?: (detail: {
+    catalogItemId: string
+    gridX: number
+    gridY: number
+  }) => void
+  onFurnishClearSelection?: () => void
+  renderFurniture?: (
+    metrics: GridMetrics,
+    floorRef: React.RefObject<HTMLDivElement | null>,
+  ) => React.ReactNode
 }
 
-export function DrawableGrid({ canvasRef, dimensions, selectedTileColor = "" }: DrawableGridProps) {
+export function DrawableGrid({
+  canvasRef,
+  dimensions,
+  selectedTileColor = "",
+  layoutMode = "draw",
+  paletteDragging = false,
+  onFurnitureDrop,
+  onFurnishClearSelection,
+  renderFurniture,
+}: DrawableGridProps) {
   const [isDrawing, setIsDrawing] = useState(false)
   const [tool, setTool] = useState<"pencil" | "eraser">("pencil")
   const contextRef = useRef<CanvasRenderingContext2D | null>(null)
@@ -25,37 +51,38 @@ export function DrawableGrid({ canvasRef, dimensions, selectedTileColor = "" }: 
 
   // Update tile image path when selected color changes
   useEffect(() => {
-    const selectedTile = tileOptions.find((tile) => tile.value === selectedTileColor)
-    if (selectedTile) {
-      setTileImagePath(selectedTile.imagePath)
-    }
+    setTileImagePath(getTileImagePath(selectedTileColor))
   }, [selectedTileColor])
 
   useEffect(() => {
-    // Set grid size based on container width
-    const updateGridSize = () => {
-      if (gridRef.current) {
-        const containerWidth = Math.min(window.innerWidth - 40, 500)
-        setCanvasSize({
-          width: containerWidth,
-          height: containerWidth,
-        })
+    const el = gridRef.current
+    if (!el) return
 
-        // Calculate cell size based on dimensions
-        setCellSize({
-          width: containerWidth / dimensions.width,
-          height: containerWidth / dimensions.height,
-        })
-      }
+    const updateGridSize = () => {
+      const containerWidth = el.clientWidth
+      if (containerWidth < 1) return
+
+      const cell = containerWidth / dimensions.width
+      setCanvasSize({
+        width: containerWidth,
+        height: cell * dimensions.height,
+      })
+      setCellSize({
+        width: cell,
+        height: cell,
+      })
     }
 
     updateGridSize()
+    const ro = new ResizeObserver(() => updateGridSize())
+    ro.observe(el)
     window.addEventListener("resize", updateGridSize)
 
     return () => {
+      ro.disconnect()
       window.removeEventListener("resize", updateGridSize)
     }
-  }, [dimensions, gridRef])
+  }, [dimensions.width, dimensions.height])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -73,7 +100,24 @@ export function DrawableGrid({ canvasRef, dimensions, selectedTileColor = "" }: 
     contextRef.current = context
   }, [canvasRef, canvasSize])
 
+  const handleFloorDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      if (!onFurnitureDrop || !gridRef.current) return
+      const id = readFloorDragPayload(e)
+      if (!id) return
+      const rect = gridRef.current.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+      const gx = Math.floor(x / cellSize.width)
+      const gy = Math.floor(y / cellSize.height)
+      onFurnitureDrop({ catalogItemId: id, gridX: gx, gridY: gy })
+    },
+    [cellSize.height, cellSize.width, onFurnitureDrop],
+  )
+
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (layoutMode === "furnish") return
     const canvas = canvasRef.current
     const context = contextRef.current
     if (!canvas || !context) return
@@ -101,7 +145,7 @@ export function DrawableGrid({ canvasRef, dimensions, selectedTileColor = "" }: 
   }
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return
+    if (layoutMode === "furnish" || !isDrawing) return
 
     const canvas = canvasRef.current
     const context = contextRef.current
@@ -170,36 +214,47 @@ export function DrawableGrid({ canvasRef, dimensions, selectedTileColor = "" }: 
     return cells
   }
 
+  const metrics: GridMetrics = {
+    cellSize,
+    canvasSize,
+    dimensions,
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between mb-2">
-        <div className="flex space-x-2">
-          <Button
-            variant={tool === "pencil" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setTool("pencil")}
-            className={tool === "pencil" ? "bg-[#f02424] hover:bg-[#d01414]" : ""}
-          >
-            <Pencil className="h-4 w-4 mr-1" /> Draw
-          </Button>
-          <Button
-            variant={tool === "eraser" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setTool("eraser")}
-            className={tool === "eraser" ? "bg-[#f02424] hover:bg-[#d01414]" : ""}
-          >
-            <Eraser className="h-4 w-4 mr-1" /> Erase
+    <div className="w-full space-y-4">
+      {layoutMode === "draw" && (
+        <div className="mb-2 flex justify-between">
+          <div className="flex space-x-2">
+            <Button
+              variant={tool === "pencil" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTool("pencil")}
+              className={tool === "pencil" ? "bg-[#f02424] hover:bg-[#d01414]" : ""}
+            >
+              <Pencil className="mr-1 h-4 w-4" /> Draw
+            </Button>
+            <Button
+              variant={tool === "eraser" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTool("eraser")}
+              className={tool === "eraser" ? "bg-[#f02424] hover:bg-[#d01414]" : ""}
+            >
+              <Eraser className="mr-1 h-4 w-4" /> Erase
+            </Button>
+          </div>
+          <Button variant="outline" size="sm" onClick={clearCanvas}>
+            Clear
           </Button>
         </div>
-        <Button variant="outline" size="sm" onClick={clearCanvas}>
-          Clear
-        </Button>
-      </div>
+      )}
 
-      <div className="border rounded-md overflow-hidden relative" ref={gridRef}>
+      <div
+        className="relative w-full max-w-full overflow-hidden rounded-md border"
+        ref={gridRef}
+      >
         {/* Tile grid */}
         <div
-          className="grid absolute top-0 left-0 z-0"
+          className="absolute left-0 top-0 z-0 grid"
           style={{
             gridTemplateColumns: `repeat(${dimensions.width}, ${cellSize.width}px)`,
             gridTemplateRows: `repeat(${dimensions.height}, ${cellSize.height}px)`,
@@ -209,6 +264,27 @@ export function DrawableGrid({ canvasRef, dimensions, selectedTileColor = "" }: 
         >
           {renderGridCells()}
         </div>
+
+        {layoutMode === "furnish" && onFurnishClearSelection && (
+          <div
+            role="presentation"
+            className="absolute inset-0 z-[2]"
+            onPointerDown={() => onFurnishClearSelection()}
+          />
+        )}
+
+        {renderFurniture?.(metrics, gridRef)}
+
+        {paletteDragging && onFurnitureDrop && (
+          <div
+            className="absolute inset-0 z-[60] bg-black/10"
+            onDragOver={(e) => {
+              e.preventDefault()
+              e.dataTransfer.dropEffect = "copy"
+            }}
+            onDrop={handleFloorDrop}
+          />
+        )}
 
         {/* Drawing canvas */}
         <canvas
@@ -222,11 +298,16 @@ export function DrawableGrid({ canvasRef, dimensions, selectedTileColor = "" }: 
           onTouchStart={startDrawing}
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
-          className="touch-none relative z-10 bg-transparent"
+          className={cn(
+            "relative z-10 touch-none bg-transparent",
+            layoutMode === "furnish" && "pointer-events-none",
+          )}
         />
       </div>
-      <p className="text-xs text-[#231f20]/70 text-center">
-        Draw your tile layout on the grid. Use the pencil to draw and eraser to remove lines.
+      <p className="text-center text-xs text-[#231f20]/70">
+        {layoutMode === "furnish"
+          ? "Drag fixtures from the palette onto the floor. Select an item to rotate, flip, or snap to tiles."
+          : "Draw your tile layout on the grid. Use the pencil to draw and eraser to remove lines."}
       </p>
     </div>
   )

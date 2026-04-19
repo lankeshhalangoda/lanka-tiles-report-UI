@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
 import { Input } from "@/components/ui/input"
 import { ProductCategoriesDrawer } from "@/components/product-categories-drawer"
-import { StatusDropdown } from "@/components/status-dropdown"
 import { Plus } from "lucide-react"
 
 export default function ItemsPage() {
@@ -69,16 +68,20 @@ export default function ItemsPage() {
   }
 
   return (
-    <main className="min-h-screen p-4 pb-20">
+    <main className="min-h-screen pb-40">
       <FormHeader />
-      <StatusDropdown />
-
-      <Card className="mb-6">
-        <CardContent className="p-4 pt-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Items</h2>
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-4 pb-8 pt-3 lg:max-w-7xl">
+      <Card>
+        <CardContent className="p-5 pt-7 sm:p-6 sm:pt-8">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display text-2xl font-semibold tracking-tight text-zinc-900">
+                Items
+              </h2>
+              <p className="mt-1 text-sm text-zinc-600">Line items and pricing</p>
+            </div>
             <Button
-              className="bg-[#f02424] hover:bg-[#d01414]"
+              className="rounded-lg bg-gradient-to-r from-red-600 to-red-500 font-semibold shadow-sm hover:from-red-700 hover:to-red-600"
               size="sm"
               onClick={() => {
                 const newId = items.length > 0 ? Math.max(...items.map((i) => i.id)) + 1 : 1
@@ -125,9 +128,11 @@ export default function ItemsPage() {
         </CardContent>
       </Card>
 
-      <Card className="mb-6">
-        <CardContent className="p-4 pt-6">
-          <h2 className="text-xl font-bold mb-4">Signatures</h2>
+      <Card>
+        <CardContent className="p-5 pt-7 sm:p-6 sm:pt-8">
+          <h2 className="font-display mb-4 text-2xl font-semibold tracking-tight text-zinc-900">
+            Signatures
+          </h2>
 
           <div className="mb-6">
             <h3 className="font-medium mb-2">CCA's Signature</h3>
@@ -153,16 +158,22 @@ export default function ItemsPage() {
       </Card>
 
       <ProductCategoriesDrawer />
+      </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t z-20">
-        <Progress value={progress} className="mb-4" />
-        <div className="grid grid-cols-2 gap-4">
-          <Button onClick={handleBack} variant="outline">
-            Back
-          </Button>
-          <Button onClick={handleSubmit} className="bg-[#f02424] hover:bg-[#d01414]">
-            Submit Report
-          </Button>
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200/80 bg-white/90 p-4 shadow-[0_-8px_30px_-10px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+        <div className="mx-auto w-full max-w-6xl px-4 lg:max-w-7xl">
+          <Progress value={progress} className="mb-4 h-2 bg-zinc-100" />
+          <div className="grid grid-cols-2 gap-3">
+            <Button onClick={handleBack} variant="outline" className="h-11 rounded-xl font-semibold">
+              Back
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              className="h-11 rounded-xl bg-gradient-to-r from-red-600 to-red-500 font-semibold shadow-md shadow-red-500/20 hover:from-red-700 hover:to-red-600"
+            >
+              Submit report
+            </Button>
+          </div>
         </div>
       </div>
     </main>

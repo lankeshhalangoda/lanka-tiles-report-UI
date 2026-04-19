@@ -8,11 +8,6 @@
   --foreground: #231f20;
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-}
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -43,6 +38,14 @@ body {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground antialiased;
+    background-color: hsl(40 18% 97%);
+    background-image: linear-gradient(
+      165deg,
+      hsl(210 25% 98%) 0%,
+      hsl(40 30% 98%) 38%,
+      hsl(25 35% 97%) 100%
+    );
+    background-attachment: fixed;
   }
 }

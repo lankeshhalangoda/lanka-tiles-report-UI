@@ -20,6 +20,12 @@ export const tileOptions = [
   { name: "Sandstone", value: "sandstone", imagePath: "/tiles/tile-ivory.jpeg" },
 ]
 
+/** Image used on the 2D grid and 3D floor for a stored tile color value. */
+export function getTileImagePath(tileColorValue: string): string {
+  const selected = tileOptions.find((t) => t.value === tileColorValue)
+  return selected?.imagePath ?? "/tiles/tile-ivory.jpeg"
+}
+
 interface CustomerFormProps {
   onTileColorChange?: (color: string) => void
 }

@@ -1,16 +1,25 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Fraunces, Plus_Jakarta_Sans } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
 import { ProductCategoriesProvider } from "@/components/product-categories-provider"
 
-const inter = Inter({ subsets: ["latin"] })
+const sans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+})
+
+const display = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: "Lanka Tiles Report",
   description: "Mobile application for Lanka Tiles reports",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -19,8 +28,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className={`${sans.variable} ${display.variable}`}>
+      <body className="font-sans antialiased">
         <ProductCategoriesProvider>
           {children}
           <Toaster />
