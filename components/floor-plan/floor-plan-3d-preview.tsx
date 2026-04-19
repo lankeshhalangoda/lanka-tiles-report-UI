@@ -1,8 +1,8 @@
 "use client"
 
 import { Canvas } from "@react-three/fiber"
-import { ContactShadows, OrbitControls, useTexture } from "@react-three/drei"
-import { Suspense, useEffect, useMemo } from "react"
+import { ContactShadows, OrbitControls } from "@react-three/drei"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import * as THREE from "three"
 import { cn } from "@/lib/utils"
 import { getFloorPlanItemDef } from "./catalog"
@@ -48,7 +48,11 @@ function PlacedFurniture({ placement }: { placement: PlacedFloorItem }) {
   )
 }
 
-/** One texture repeat per grid cell, matching the 2D tile image per cell. */
+/**
+ * Floor tile texture — loaded with THREE.TextureLoader instead of drei's useTexture.
+ * Drei/Three can reject image failures with a DOM Event, which surfaces as
+ * unhandled "[object Event]" in Next's dev overlay.
+ */
 function TiledFloorMesh({
   dw,
   dh,
@@ -58,18 +62,57 @@ function TiledFloorMesh({
   dh: number
   imagePath: string
 }) {
-  const source = useTexture(imagePath)
-  const map = useMemo(() => {
-    const t = source.clone()
-    t.wrapS = t.wrapT = THREE.RepeatWrapping
-    t.repeat.set(dw, dh)
-    t.anisotropy = 8
-    t.colorSpace = THREE.SRGBColorSpace
-    t.needsUpdate = true
-    return t
-  }, [source, dw, dh])
+  const [map, setMap] = useState<THREE.Texture | null>(null)
+  const dimsRef = useRef({ dw, dh })
+  dimsRef.current = { dw, dh }
 
-  useEffect(() => () => map.dispose(), [map])
+  useEffect(() => {
+    const ctrl = { cancelled: false }
+    const loader = new THREE.TextureLoader()
+    loader.load(
+      imagePath,
+      (tex) => {
+        if (ctrl.cancelled) {
+          tex.dispose()
+          return
+        }
+        const { dw: w, dh: h } = dimsRef.current
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+        tex.anisotropy = 8
+        tex.colorSpace = THREE.SRGBColorSpace
+        tex.repeat.set(w, h)
+        tex.needsUpdate = true
+        setMap((prev) => {
+          prev?.dispose()
+          return tex
+        })
+      },
+      undefined,
+      () => {
+        if (ctrl.cancelled) return
+        if (process.env.NODE_ENV === "development") {
+          console.warn("[TileSite] Could not load floor texture:", imagePath)
+        }
+        setMap((prev) => {
+          prev?.dispose()
+          return null
+        })
+      },
+    )
+    return () => {
+      ctrl.cancelled = true
+      setMap((prev) => {
+        prev?.dispose()
+        return null
+      })
+    }
+  }, [imagePath])
+
+  useEffect(() => {
+    if (!map) return
+    map.repeat.set(dw, dh)
+    map.needsUpdate = true
+  }, [map, dw, dh])
 
   return (
     <mesh
@@ -78,7 +121,15 @@ function TiledFloorMesh({
       receiveShadow
     >
       <planeGeometry args={[dw, dh]} />
-      <meshStandardMaterial map={map} roughness={0.88} metalness={0.04} />
+      {map ? (
+        <meshStandardMaterial map={map} roughness={0.88} metalness={0.04} />
+      ) : (
+        <meshStandardMaterial
+          color="#ebe4d8"
+          roughness={0.88}
+          metalness={0.04}
+        />
+      )}
     </mesh>
   )
 }
@@ -148,24 +199,7 @@ function RoomScene({
       />
       <hemisphereLight args={["#f8fafc", "#64748b", 0.42]} />
 
-      <Suspense
-        fallback={
-          <mesh
-            rotation={[-Math.PI / 2, 0, 0]}
-            position={[dw / 2, 0, dh / 2]}
-            receiveShadow
-          >
-            <planeGeometry args={[dw, dh]} />
-            <meshStandardMaterial
-              color="#ebe4d8"
-              roughness={0.88}
-              metalness={0.04}
-            />
-          </mesh>
-        }
-      >
-        <TiledFloorMesh dw={dw} dh={dh} imagePath={tileImagePath} />
-      </Suspense>
+      <TiledFloorMesh dw={dw} dh={dh} imagePath={tileImagePath} />
       <FloorGroutGrid dw={dw} dh={dh} />
 
       {placements.map((p) => (

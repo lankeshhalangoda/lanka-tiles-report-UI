@@ -40,7 +40,9 @@ export function ItemsList({ items, setItems }: ItemsListProps) {
   return (
     <div className="space-y-4">
       {items.length === 0 ? (
-        <p className="text-center text-[#231f20]/60 py-4">No items added yet. Click "Add Item" to begin.</p>
+        <p className="text-center text-[#231f20]/60 py-4">
+          No items added yet. Click &quot;Add Item&quot; to begin.
+        </p>
       ) : (
         items.map((item) => (
           <Card key={item.id} className="overflow-hidden">

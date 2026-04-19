@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { StatusDropdown } from "@/components/status-dropdown"
+import { APP_PRODUCT_NAME } from "@/lib/branding"
 import { cn } from "@/lib/utils"
 
 const steps = [
@@ -46,10 +47,10 @@ export function FormHeader() {
             />
             <div className="hidden min-[380px]:block text-left">
               <p className="font-display text-lg font-semibold leading-tight tracking-tight text-zinc-900">
-                Site report
+                {APP_PRODUCT_NAME}
               </p>
               <p className="text-[11px] font-medium uppercase tracking-widest text-zinc-500">
-                Lanka Tiles
+                Lanka Tiles site reports
               </p>
             </div>
           </Link>

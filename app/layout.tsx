@@ -4,6 +4,7 @@ import { Fraunces, Plus_Jakarta_Sans } from "next/font/google"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
 import { ProductCategoriesProvider } from "@/components/product-categories-provider"
+import { APP_META_DESCRIPTION, APP_PRODUCT_NAME } from "@/lib/branding"
 
 const sans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -18,8 +19,11 @@ const display = Fraunces({
 })
 
 export const metadata: Metadata = {
-  title: "Lanka Tiles Report",
-  description: "Mobile application for Lanka Tiles reports",
+  title: {
+    default: `${APP_PRODUCT_NAME} — Lanka Tiles`,
+    template: `%s — ${APP_PRODUCT_NAME}`,
+  },
+  description: APP_META_DESCRIPTION,
 }
 
 export default function RootLayout({

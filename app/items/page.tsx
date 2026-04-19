@@ -135,12 +135,12 @@ export default function ItemsPage() {
           </h2>
 
           <div className="mb-6">
-            <h3 className="font-medium mb-2">CCA's Signature</h3>
+            <h3 className="font-medium mb-2">CCA&apos;s Signature</h3>
             <SignaturePad label="CCA's Signature" />
           </div>
 
           <div>
-            <h3 className="font-medium mb-2">Customer's Signature</h3>
+            <h3 className="font-medium mb-2">Customer&apos;s Signature</h3>
             <SignaturePad label="Customer's Signature" />
           </div>
 

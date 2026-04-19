@@ -6,7 +6,7 @@ import * as Icons from "lucide-react"
 const FALLBACK: LucideIcon = Icons.Home
 
 function resolveIcon(name: string): LucideIcon {
-  const Icon = (Icons as Record<string, LucideIcon | undefined>)[name]
+  const Icon = (Icons as unknown as Record<string, LucideIcon | undefined>)[name]
   return Icon ?? FALLBACK
 }
 

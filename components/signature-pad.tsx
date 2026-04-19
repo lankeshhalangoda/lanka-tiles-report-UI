@@ -144,6 +144,8 @@ export function SignaturePad({ label }: SignaturePadProps) {
     <div className="space-y-2">
       {uploadedImage ? (
         <div className="border rounded-md overflow-hidden bg-white p-2">
+          {/* User-uploaded data URL; Next/Image is a poor fit here */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={uploadedImage || "/placeholder.svg"}
             alt={`Uploaded ${label}`}

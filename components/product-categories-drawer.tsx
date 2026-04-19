@@ -3,16 +3,19 @@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { ChevronRight, ChevronLeft } from "lucide-react"
-import { useProductCategories } from "./product-categories-provider"
+import {
+  useProductCategories,
+  type ProductCategorySelection,
+} from "./product-categories-provider"
 
 export function ProductCategoriesDrawer() {
   const { selectedItems, setSelectedItems, drawerOpen, setDrawerOpen } = useProductCategories()
 
-  const handleCheckboxChange = (item: string) => {
-    setSelectedItems({
-      ...selectedItems,
-      [item]: !selectedItems[item],
-    })
+  const handleCheckboxChange = (item: keyof ProductCategorySelection) => {
+    setSelectedItems((prev) => ({
+      ...prev,
+      [item]: !prev[item],
+    }))
   }
 
   const categories = [
@@ -63,7 +66,9 @@ export function ProductCategoriesDrawer() {
                   <Checkbox
                     id={category.id}
                     checked={selectedItems[category.id as keyof typeof selectedItems]}
-                    onCheckedChange={() => handleCheckboxChange(category.id)}
+                    onCheckedChange={() =>
+                      handleCheckboxChange(category.id as keyof ProductCategorySelection)
+                    }
                     className="mt-0.5"
                   />
                   <Label htmlFor={category.id} className="text-sm leading-tight whitespace-pre-line">
