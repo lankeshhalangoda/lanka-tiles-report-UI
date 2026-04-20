@@ -58,24 +58,21 @@ export function FormHeader() {
         </div>
 
         <nav aria-label="Progress" className="w-full">
-          <ol className="flex items-center gap-1.5">
-            {steps.map((step, index) => {
+          <ol className="flex w-full max-w-full items-stretch">
+            {steps.flatMap((step, index) => {
               const active = step.id === currentStep
               const done = step.id < currentStep
-              return (
-                <li key={step.id} className="flex min-w-0 flex-1 items-center gap-1.5">
-                  {index > 0 && (
-                    <div
-                      className={cn(
-                        "h-px flex-1 rounded-full",
-                        done ? "bg-gradient-to-r from-red-500 to-red-400" : "bg-zinc-200",
-                      )}
-                      aria-hidden
-                    />
-                  )}
+              const lineDone =
+                index > 0 && steps[index - 1]!.id < currentStep
+
+              const stepCell = (
+                <li
+                  key={step.id}
+                  className="flex min-w-0 flex-[2_1_0%] flex-col items-center justify-center"
+                >
                   <div
                     className={cn(
-                      "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-2 py-2 text-center transition-colors",
+                      "flex w-full min-w-0 max-w-[9.5rem] flex-col items-center gap-1 rounded-xl px-2 py-2 text-center transition-colors sm:max-w-[11rem]",
                       active &&
                         "bg-gradient-to-br from-red-600 to-red-500 text-white shadow-md shadow-red-500/25",
                       done && !active && "text-red-600",
@@ -94,7 +91,7 @@ export function FormHeader() {
                     </span>
                     <span
                       className={cn(
-                        "truncate text-[10px] font-semibold uppercase tracking-wide",
+                        "w-full truncate text-center text-[10px] font-semibold uppercase tracking-wide",
                         active ? "text-white/95" : "text-zinc-600",
                       )}
                     >
@@ -103,6 +100,27 @@ export function FormHeader() {
                   </div>
                 </li>
               )
+
+              if (index === 0) return [stepCell]
+
+              const connector = (
+                <li
+                  key={`connector-${step.id}`}
+                  aria-hidden
+                  className="flex min-w-[0.5rem] flex-[1_1_0%] items-center self-center px-0.5 sm:min-w-[0.75rem] sm:px-1"
+                >
+                  <div
+                    className={cn(
+                      "h-px w-full rounded-full",
+                      lineDone
+                        ? "bg-gradient-to-r from-red-500 to-red-400"
+                        : "bg-zinc-200",
+                    )}
+                  />
+                </li>
+              )
+
+              return [connector, stepCell]
             })}
           </ol>
         </nav>
